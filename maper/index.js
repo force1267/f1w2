@@ -13,7 +13,10 @@ function getPage(){
     map.style.left = "0%";
     map.style.width = "80%";
     map.style.height = "80%";
-
+    map.oncontextmenu = function (e) {
+        e.preventDefault();
+    };
+    
     var tiles = document.getElementById("tiles");
     tiles.style.position = "absolute";
     tiles.style.top = "0%";

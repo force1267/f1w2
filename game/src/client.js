@@ -5,6 +5,9 @@ canvas.style.top = "3%";
 canvas.style.left = "3%";
 canvas.style.width = "97%";
 canvas.style.height = "97%";
+canvas.oncontextmenu = function (e) {
+    e.preventDefault();
+};
 
 init({
     CANVAS: canvas,
