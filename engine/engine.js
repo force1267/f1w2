@@ -181,13 +181,83 @@ module.exports = (()=>{
         setTimeout(()=>render(camera), 1000/FPS);
     }
 
+    function input(){
+        var exports = {};
+        //player inputs
+        exports.key = {
+            //mouse
+        mouse_left : 0, mouse_right : 2,
+            //keyboard
+        num_0 : 48, num_1 : 49, num_2 : 50, num_3 : 51, num_4 : 52, num_5 : 53, num_6 : 54,
+        num_7 : 55, num_8 : 56, num_9 : 57, a : 65, add : 107, alt : 18, b : 66,
+        backspace : 8, c : 67, ctrl : 17, d : 68, decimal : 110, delete : 46,
+        divide : 111, down : 40, e : 69, end : 35, enter : 13, escape : 27,
+        f1 : 112, f2 : 113, f3 : 114, f4 : 115, f5 : 116, f6 : 117,
+        f7 : 118, f8 : 119, f9 : 120, f10 : 121, f11 : 122, f12 : 123,
+        g : 71, h : 72, home : 36, f : 70, i : 73, insert : 45, j : 74, k : 75,
+        l : 76, left : 37, m : 77, multiply : 106, n : 78, cal_0 : 96, cal_1 : 97,
+        cal_2 : 98, cal_3 : 99, cal_4 : 100, cal_5 : 101, cal_6 : 102, cal_7 : 103,
+        cal_8 : 104, cal_9 : 105, o : 79, p : 80, pagedown : 34, pageup : 33,
+        pause : 19, q : 81, r : 82, right : 39, s : 83, shift : 16, space : 32,
+        subtract : 109, t : 84, tab : 9, u : 85, up : 38, v : 86, w : 87,
+        x : 88, y : 89, z : 90 }
+    
+        // keyboard functions:
+        exports.keyboard_register = function(){
+        var KR = exports.KR = {}
+            KR.key_down = [];
+            KR.key_press = [];
+            KR.key_up = [];
+            for(var kc of exports.key){
+                KR.key_up[kc] = 1;
+            }
+            return KR;
+        }
+        exports.localKeyboard = new exports.keyboard_register();//local keyboard
+        var LK = exports.localKeyboard;
+    
+        exports.key_check_down = function(_key,kr) { return kr === undefined ? LK.key_down[_key] : kr.key_down[_key]; }
+        exports.key_check_press = function(_key,kr) { return kr === undefined ? LK.key_press[_key] : kr.key_press[_key]; }
+        exports.key_check_up = function(_key,kr) { return kr === undefined ? LK.key_up[_key] : kr.key_up[_key]; }
+        exports.key_on_change = function(_key){}// set a handler
+        var bd = document.body;
+        bd.addEventListener("keydown", function(event){
+            LK.key_down[event.keyCode] = 1;
+            LK.key_up[event.keyCode] = 0;
+            exports.key_on_change(event.keyCode);
+        });
+        bd.addEventListener("keypress", function(event){//event.keyCode is for upper case (works here if capslock is on)
+            LK.key_press[event.keyCode] = 1;
+        });
+        bd.addEventListener("keyup", function(event){
+            LK.key_up[event.keyCode] = 1;
+            LK.key_down[event.keyCode] = 0;//key must come up ! otherwise it's still down !!!
+            exports.key_on_change(event.keyCode);
+        });
+        // mouse functions:
+        bd.addEventListener("mousedown", function(event){
+            LK.key_down[event.button] = 1;
+            LK.key_up[event.button] = 0;
+            LK.key_press[event.button] = 1;//not good !
+        });
+        bd.addEventListener("mouseup", function(event){
+            LK.key_up[event.button] = 1;
+            LK.key_down[event.button] = 0;
+            LK.key_press[event.button] = 0;//not good !
+        });
+
+        return exports;
+    }
+
+
     window.__ngn = {
         world,
         update,
         render,
         agent,
         camera,
-        init
+        init,
+        input
     };
     return __ngn;
 })();
