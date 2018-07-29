@@ -30,12 +30,13 @@ module.exports = (()=>{
         NET = 20,
         WIDTH = 1600,
         HEIGHT = 900,
-        RENDER_DISTANCE_X = 1600;
-        RENDER_DISTANCE_Y = 900;
-        WORLD_WIDTH = 20000,
-        WORLD_HEIGHT = 20000,
-        WORLD_PART_SIZE = 500
-        CANVAS = null
+        RENDER_DISTANCE_X = 1600,
+        RENDER_DISTANCE_Y = 900,
+        TILE_SIZE = 32,
+        WORLD_WIDTH = 4000,
+        WORLD_HEIGHT = 4000,
+        WORLD_PART_SIZE = 400,
+        CANVAS = null,
         CONTEXT2D = null;
 
     function init(config){
@@ -43,13 +44,38 @@ module.exports = (()=>{
         TPS = config.TPS ? config.TPS : TPS
         WIDTH = config.WIDTH ? config.WIDTH : WIDTH
         HEIGHT = config.HEIGHT ? config.HEIGHT : HEIGHT
+        RENDER_DISTANCE_X = config.RENDER_DISTANCE_X ? config.RENDER_DISTANCE_X : WIDTH
+        RENDER_DISTANCE_Y = config.RENDER_DISTANCE_Y ? config.RENDER_DISTANCE_Y : HEIGHT
         WORLD_WIDTH = config.WORLD_WIDTH ? config.WORLD_WIDTH : WORLD_WIDTH
         WORLD_HEIGHT = config.WORLD_HEIGHT ? config.WORLD_HEIGHT : WORLD_HEIGHT
+        TILE_SIZE = config.TILE_SIZE ? config.TILE_SIZE : TILE_SIZE;
+        tiles.all = config.TILES ? config.tiles : [];
+        tiles.x = Math.ceil(WORLD_WIDTH / TILE_SIZE);
+        tiles.y = Math.ceil(WORLD_HEIGHT / TILE_SIZE);
         if(config.CANVAS){
             var canvas = CANVAS = config.CANVAS
             canvas.width = WIDTH;
             canvas.height = HEIGHT;
             CONTEXT2D = canvas.getContext("2d");
+        }
+    }
+
+    var paused = false;
+    function pause(time){
+        paused = true;
+        if(time !== undefined){
+            setTimeout(
+                ()=>paused=false,
+                time
+            );
+        }
+    }
+    function resume(fn){
+        paused = false;
+        if(fn instanceof Array){
+            fn.forEach(e=>e())
+        } else {
+            fn()
         }
     }
 
@@ -127,7 +153,9 @@ module.exports = (()=>{
                 object.update();
             }
         }
-        setTimeout(update, 1000/TPS);
+        if(!paused){
+            setTimeout(update, 1000/TPS);
+        }
     }
 
     //points : Array[ function(data) ]
@@ -145,6 +173,8 @@ module.exports = (()=>{
             this.all = [];
             this.rdx = Math.ceil((RENDER_DISTANCE_X/2)/WORLD_PART_SIZE);
             this.rdy = Math.ceil((RENDER_DISTANCE_Y/2)/WORLD_PART_SIZE);
+            this.tsx = Math.ceil(RENDER_DISTANCE_X / TILE_SIZE);
+            this.tsy = Math.ceil(RENDER_DISTANCE_Y / TILE_SIZE);
         }
         follow(ag){
             if(ag){
@@ -167,10 +197,84 @@ module.exports = (()=>{
         }
     }
 
-    function render(camera){
+    var image_sources = [];
+    var tile_templates = {};
+    class TileTemplate {
+        constructor(name, src, sx, sy){
+            this.name = name;
+            this.src = src;
+            tile_templates[name] = this;
+            var self = this;
+            var imgdata = null;
+            //find previously loaded image
+            for(var s of image_sources){
+                if(s.src === src){
+                    imgdata = s.cvs.getContext("2d").getImageData(sx, sy, TILE_SIZE, TILE_SIZE);
+                }
+            }
+            if(imgdata === null){
+                //load image
+                var img = new Image;
+                img.src = src;
+                img.onload = function(){
+                    var cvs = document.createElement("canvas");
+                    image_sources.push({src,cvs});
+                    self.data = cvs.getContext("2d").getImageData(sx, sy, TILE_SIZE, TILE_SIZE);
+                }
+            } else {
+                self.data = imgdata;
+            }
+        }
+        draw(ctx, x, y){
+            ctx.putImageData(this.data, x, y);
+        }
+    }
+
+    //load the map
+    function load_tiles(tile_list){
+        // tile_list = {
+        //     tiles : [  ["grass", "tileset.png", 64, 256], ... ]
+        //     locs : [  ["grass", 12, 17], ... ]
+        // }
+        JSON.parse(tile_list).tiles.forEach(
+            t => new TileTemplate(t[0],t[1],t[2],t[3])
+        );
+        JSON.parse(tile_list).locs.forEach(
+            l => {
+                tiles.all[l[1]][l[2]] = l[0];
+            }
+        );
+    }
+
+    var tiles = {
+        all : [],
+        x : 0,
+        y : 0
+    }
+    
+    var savedCamera = null;//so we can resume(render) instead of resume(()=>render(cam))
+    function render(camera = savedCamera){
+        savedCamera = camera;//prpbably not a good idea
         camera.ctx.fillStyle = "white"
         camera.ctx.fillRect(0, 0, WIDTH, HEIGHT);
         camera.follow();
+
+        //render tiles
+        var sx = Math.floor(camera.x/TILE_SIZE);
+        var sy = Math.floor(camera.y/TILE_SIZE);
+        var xs = camera.tsx;
+        var ys = camera.tsy;
+        for(var i = sx; i < sx + xs; i++){
+            if(tiles.all[i]){
+                for(var j = sy; j < sy + ys; j++){
+                    if(tiles.all[i][j]){
+                        tile_templates[ tiles.all[i][j] ].draw(camera.ctx, i*TILE_SIZE, j*TILE_SIZE);
+                    }
+                }
+            }
+        }
+
+        //render objects inside camera
         for(var object of camera.all){
             if(object.type !== "logic"){
                 var x = object.x - camera.x;
@@ -178,7 +282,9 @@ module.exports = (()=>{
                 object.draw(camera.ctx, x, y);
             }
         }
-        setTimeout(()=>render(camera), 1000/FPS);
+        if(!paused){
+            setTimeout(()=>render(camera), 1000/FPS);
+        }
     }
 
     function input(){
@@ -208,8 +314,8 @@ module.exports = (()=>{
             KR.key_down = [];
             KR.key_press = [];
             KR.key_up = [];
-            for(var kc of exports.key){
-                KR.key_up[kc] = 1;
+            for(var k in exports.key){
+                KR.key_up[exports.key[k]] = 1;
             }
             return KR;
         }
@@ -220,7 +326,7 @@ module.exports = (()=>{
         exports.key_check_press = function(_key,kr) { return kr === undefined ? LK.key_press[_key] : kr.key_press[_key]; }
         exports.key_check_up = function(_key,kr) { return kr === undefined ? LK.key_up[_key] : kr.key_up[_key]; }
         exports.key_on_change = function(_key){}// set a handler
-        var bd = document.body;
+        var bd = CANVAS;
         bd.addEventListener("keydown", function(event){
             LK.key_down[event.keyCode] = 1;
             LK.key_up[event.keyCode] = 0;
@@ -253,7 +359,12 @@ module.exports = (()=>{
     window.__ngn = {
         world,
         update,
+        tiles,
         render,
+        TileTemplate,
+        load_tiles,
+        pause,
+        resume,
         agent,
         camera,
         init,
