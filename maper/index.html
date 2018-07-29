@@ -8,8 +8,15 @@
 </head>
 <body>
     <canvas id="canvas"></canvas>
-    <div id="tiles"></div>
-    <div id="tools"></div>
+    <div id="tiles">
+        <input type="button" id="load-tile" value="load" disabled>
+        <br>
+    </div>
+    <div id="tools">
+        <label for="tilesize">tile size</label>
+        <input type="text" id="tilesize">
+        <input type="button" id="tilesizeinit" value="init tile size">
+    </div>
     <script src="index.js"></script>
 </body>
 </html>
