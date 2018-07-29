@@ -1,0 +1,20 @@
+{
+  "name": "f1w2",
+  "version": "0.0.1",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "electron .",
+    "start": "electron ."
+  },
+  "keywords": ["game", "f1w2", "engine", "pubg", "survival"],
+  "author": "force1267@gmail.com",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.3",
+    "socket.io": "^2.1.1"
+  },
+  "dev-dependencies": {
+    "electron": "^2.0.5"
+  }
+}

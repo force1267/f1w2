@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>f1w2</title>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        var version = require("./src/versions.js");
+        var remote = require('electron').remote,
+            arguments = remote.getGlobal('sharedObject').prop1;
+
+        var server = false;
+        for(var arg of arguments){
+            if(arg === "--server"){
+                server = true;
+            }
+        }
+        if(server) {
+            var server = require("./src/server.js");
+        } else {
+            var client = require("./src/client.js");
+        }
+    </script>
+</body>
+</html>
