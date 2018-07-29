@@ -1,5 +1,5 @@
 var versions = {
-    engine : "0.0.1",
+    engine : "0.0.2",
     client : "0.0.1",
     server : "0.0.1",
     maper : "0.0.1"
