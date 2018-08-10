@@ -3,3 +3,7 @@ engine
 maper
 game client
 game server
+
+$ electron .
+$ electron . --server
+$ electorn . --maper
