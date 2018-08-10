@@ -105,9 +105,7 @@ document.getElementById("tilesizeinit").onclick = function(){
             }
         }
         //add tiles to tiles panel
-        console.log("booo")
         ldtile.onclick = function(){
-            console.log("yea")
             ldtile.value = "load";
             ldtile.onclick = load_tile;
             map.onclick = map.onmousemove = function(){}
